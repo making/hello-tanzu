@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: pack build
+      if: github.ref == 'refs/heads/main'
+      env:
+        PACK_VERSION: 0.17.0
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      run: |
+        set -e
+        docker login ${DOCKER_REGISTRY} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+        IMAGE_NAME=${DOCKER_REGISTRY}:latest
+        wget -q https://github.com/buildpacks/pack/releases/download/v${PACK_VERSION}/pack-v${PACK_VERSION}-linux.tgz
+        tar xzf pack-*.tgz
+        rm -f pack-*.tgz
+        set +e
+        docker pull ${IMAGE_NAME}
+        set -e
+        ./pack build ${IMAGE_NAME} --builder paketobuildpacks/builder:base
+        docker push ${IMAGE_NAME}

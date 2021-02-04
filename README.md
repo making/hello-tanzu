@@ -30,7 +30,7 @@ psql postgres -c 'CREATE DATABASE tanzu'
 ```
 
 ```
-docker run --rm -p 8080:8080 -e "JDBC_URL=jdbc:postgresql://host.docker.internal:5432/tanzu?user=${USER}&password=" -m 768m ghcr.io/making/hello-tanzu
+docker run --rm -p 8080:8080 -e "DATABASE_URL=postgresql://${USER}:${PASSWORD}@host.docker.internal:5432/tanzu" -m 768m ghcr.io/making/hello-tanzu
 ```
 
 ![image](https://user-images.githubusercontent.com/106908/106778481-5fdffe80-6689-11eb-9cf4-8a294ce5c7d0.png)

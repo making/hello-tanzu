@@ -1,5 +1,6 @@
 package org.example.tanzu;
 
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -34,10 +35,17 @@ public class InitServletContextListener implements ServletContextListener {
 	}
 
 	void initDataSource(ServletContext servletContext) {
-		final String jdbcUrl = System.getenv("JDBC_URL");
-		if (jdbcUrl != null) {
+		final String databaseUrl = System.getenv("DATABASE_URL");
+		if (databaseUrl != null) {
+			final URI dbUri = URI.create(databaseUrl);
+			final String url = "jdbc:postgresql://" + dbUri.getHost() + ":" + dbUri.getPort() + dbUri.getPath();
+			final String[] userInfo = dbUri.getUserInfo().split(":", 2);
+			final String username = userInfo[0];
+			final String password = userInfo[1];
 			final PGPoolingDataSource dataSource = new PGPoolingDataSource();
-			dataSource.setUrl(jdbcUrl);
+			dataSource.setUrl(url);
+			dataSource.setUser(username);
+			dataSource.setPassword(password);
 			servletContext.setAttribute("dataSource", dataSource);
 			try (final Connection connection = dataSource.getConnection()) {
 				try (final PreparedStatement prepareStatement = connection.prepareStatement("CREATE TABLE access_log("

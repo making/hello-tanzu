@@ -35,10 +35,19 @@ public class InitServletContextListener implements ServletContextListener {
 
 	void initDataSource(ServletContext servletContext) {
 		final String jdbcUrl = System.getenv("JDBC_URL");
+		final String jdbcUrlReadOnly = System.getenv("JDBC_URL_READ_ONLY");
 		if (jdbcUrl != null) {
 			final PGPoolingDataSource dataSource = new PGPoolingDataSource();
 			dataSource.setUrl(jdbcUrl);
 			servletContext.setAttribute("dataSource", dataSource);
+			if (jdbcUrlReadOnly != null) {
+				final PGPoolingDataSource dataSourceReadOnly = new PGPoolingDataSource();
+				dataSourceReadOnly.setUrl(jdbcUrlReadOnly);
+				servletContext.setAttribute("dataSourceReadOnly", dataSourceReadOnly);
+			}
+			else {
+				servletContext.setAttribute("dataSourceReadOnly", dataSource);
+			}
 			try (final Connection connection = dataSource.getConnection()) {
 				try (final PreparedStatement prepareStatement = connection.prepareStatement("CREATE TABLE access_log("
 						+ " id SERIAL PRIMARY KEY, "
@@ -52,6 +61,7 @@ public class InitServletContextListener implements ServletContextListener {
 			catch (SQLException e) {
 				e.printStackTrace();
 				servletContext.setAttribute("dataSource", null);
+				servletContext.setAttribute("dataSourceReadOnly", null);
 			}
 		}
 	}

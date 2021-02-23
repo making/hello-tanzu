@@ -19,9 +19,12 @@ import javax.sql.DataSource;
 public class HelloServlet extends HttpServlet {
 	private DataSource dataSource;
 
+	private DataSource dataSourceReadOnly;
+
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		this.dataSource = (DataSource) config.getServletContext().getAttribute("dataSource");
+		this.dataSourceReadOnly = (DataSource) config.getServletContext().getAttribute("dataSourceReadOnly");
 	}
 
 	@Override
@@ -73,22 +76,26 @@ public class HelloServlet extends HttpServlet {
 				connection.rollback();
 				throw e;
 			}
-			try (final PreparedStatement preparedStatement = connection.prepareStatement("SELECT ip, created_at FROM access_log ORDER BY created_at DESC LIMIT 10")) {
-				final ResultSet resultSet = preparedStatement.executeQuery();
-				pw.print("<table>");
-				pw.print("<tr><th>IP</th><th>Timestamp</th></tr>");
-				while (resultSet.next()) {
-					pw.print("<tr>");
-					pw.print("<td>");
-					pw.print(resultSet.getString("ip"));
-					pw.print("</td>");
-					pw.print("<td>");
-					pw.print(resultSet.getTimestamp("created_at"));
-					pw.print("</td>");
-					pw.print("</tr>");
-				}
-				pw.print("</table>");
+		}
+		catch (SQLException e) {
+			pw.print(e.getMessage());
+		}
+		try (final Connection connection = this.dataSourceReadOnly.getConnection();
+			 final PreparedStatement preparedStatement = connection.prepareStatement("SELECT ip, created_at FROM access_log ORDER BY created_at DESC LIMIT 10")) {
+			final ResultSet resultSet = preparedStatement.executeQuery();
+			pw.print("<table>");
+			pw.print("<tr><th>IP</th><th>Timestamp</th></tr>");
+			while (resultSet.next()) {
+				pw.print("<tr>");
+				pw.print("<td>");
+				pw.print(resultSet.getString("ip"));
+				pw.print("</td>");
+				pw.print("<td>");
+				pw.print(resultSet.getTimestamp("created_at"));
+				pw.print("</td>");
+				pw.print("</tr>");
 			}
+			pw.print("</table>");
 		}
 		catch (SQLException e) {
 			pw.print(e.getMessage());

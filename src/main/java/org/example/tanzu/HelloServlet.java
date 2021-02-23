@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -65,6 +67,7 @@ public class HelloServlet extends HttpServlet {
 		pw.print("<h4>");
 		pw.print("Access Log");
 		pw.print("</h4>");
+		final List<String> servers = new ArrayList<>();
 		try (final Connection connection = this.dataSource.getConnection()) {
 			connection.setAutoCommit(false);
 			try (final PreparedStatement prepareStatement = connection.prepareStatement("INSERT INTO access_log(ip) VALUES (?)")) {
@@ -76,13 +79,18 @@ public class HelloServlet extends HttpServlet {
 				connection.rollback();
 				throw e;
 			}
+			try (final PreparedStatement serverStatement = connection.prepareStatement("SELECT inet_server_addr(), inet_server_port()");
+				 final ResultSet serverResultSet = serverStatement.executeQuery()) {
+				serverResultSet.next();
+				servers.add(String.format("<tr><td>Write</td><td>%s:%s</td></tr>", serverResultSet.getString(1), serverResultSet.getString(2)));
+			}
 		}
 		catch (SQLException e) {
-			pw.print("Write Failed: " + e.getMessage() + "<br>");
+			servers.add(String.format("<tr><td>Write</td><td>%s</td></tr>", e.getMessage()));
 		}
 		try (final Connection connection = this.dataSourceReadOnly.getConnection();
-			 final PreparedStatement preparedStatement = connection.prepareStatement("SELECT ip, created_at FROM access_log ORDER BY created_at DESC LIMIT 10")) {
-			final ResultSet resultSet = preparedStatement.executeQuery();
+			 final PreparedStatement preparedStatement = connection.prepareStatement("SELECT ip, created_at FROM access_log ORDER BY created_at DESC LIMIT 10");
+			 final ResultSet resultSet = preparedStatement.executeQuery()) {
 			pw.print("<table>");
 			pw.print("<tr><th>IP</th><th>Timestamp</th></tr>");
 			while (resultSet.next()) {
@@ -96,9 +104,21 @@ public class HelloServlet extends HttpServlet {
 				pw.print("</tr>");
 			}
 			pw.print("</table>");
+			try (final PreparedStatement serverStatement = connection.prepareStatement("SELECT inet_server_addr(), inet_server_port()");
+				 final ResultSet serverResultSet = serverStatement.executeQuery()) {
+				serverResultSet.next();
+				servers.add(String.format("<tr><td>Read</td><td>%s:%s</td></tr>", serverResultSet.getString(1), serverResultSet.getString(2)));
+			}
 		}
 		catch (SQLException e) {
-			pw.print("Read Failed: " + e.getMessage() + "<br>");
+			servers.add(String.format("<tr><td>Read</td><td>%s</td></tr>", e.getMessage()));
 		}
+		pw.print("<h4>");
+		pw.print("PostgreSQL Info");
+		pw.print("</h4>");
+		pw.print("<table>");
+		pw.print("<tr><th>Type</th><th>Server</th></tr>");
+		servers.forEach(pw::print);
+		pw.print("</table>");
 	}
 }

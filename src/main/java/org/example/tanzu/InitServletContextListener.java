@@ -38,6 +38,8 @@ public class InitServletContextListener implements ServletContextListener {
 		final String jdbcUrlReadOnly = System.getenv("JDBC_URL_READ_ONLY");
 		if (jdbcUrl != null) {
 			final PGPoolingDataSource dataSource = new PGPoolingDataSource();
+			dataSource.setMaxConnections(32);
+			dataSource.setInitialConnections(8);
 			dataSource.setUrl(jdbcUrl);
 			servletContext.setAttribute("dataSource", dataSource);
 			if (jdbcUrlReadOnly != null) {

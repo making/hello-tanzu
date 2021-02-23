@@ -29,7 +29,6 @@ public class HelloServlet extends HttpServlet {
 			throws ServletException, IOException {
 		res.setContentType("text/html;charset=utf-8");
 		PrintWriter pw = res.getWriter();
-		System.out.println("Hello Tanzu!");
 		pw.print("<!doctype html>");
 		pw.print("<html>");
 		pw.print("<head>");
@@ -92,7 +91,6 @@ public class HelloServlet extends HttpServlet {
 			}
 		}
 		catch (SQLException e) {
-			e.printStackTrace();
 			pw.print(e.getMessage());
 		}
 	}

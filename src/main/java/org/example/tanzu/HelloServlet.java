@@ -78,7 +78,7 @@ public class HelloServlet extends HttpServlet {
 			}
 		}
 		catch (SQLException e) {
-			pw.print(e.getMessage());
+			pw.print("Write Failed: " + e.getMessage());
 		}
 		try (final Connection connection = this.dataSourceReadOnly.getConnection();
 			 final PreparedStatement preparedStatement = connection.prepareStatement("SELECT ip, created_at FROM access_log ORDER BY created_at DESC LIMIT 10")) {
@@ -98,7 +98,7 @@ public class HelloServlet extends HttpServlet {
 			pw.print("</table>");
 		}
 		catch (SQLException e) {
-			pw.print(e.getMessage());
+			pw.print("Read Failed: " + e.getMessage());
 		}
 	}
 }
